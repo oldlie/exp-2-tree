@@ -19,11 +19,32 @@
                 </el-input>
             </p>
             <p>
-                <el-button @click="exp2Tree">exp to tree</el-button>
+                <el-button @click="exp2Tree">将表达式输出成树</el-button>
             </p>
-            <el-tree :data="data" :props="defaultProps" @node-expand="handleNodeExpand"
-                @node-collapse="handleNodeCollapse" @node-click="handleNodeClick">
+            <el-tree :data="data" :props="defaultProps" default-expand-all @node-drag-start="handleDragStart"
+                @node-drag-enter="handleDragEnter" @node-drag-leave="handleDragLeave" @node-drag-over="handleDragOver"
+                @node-drag-end="handleDragEnd" @node-drop="handleDrop" draggable :allow-drop="allowDrop"
+                :allow-drag="allowDrag" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
+                @node-click="handleNodeClick">
             </el-tree>
+            <p>
+                <el-button @click="tree2Exp">将树输出成表达式</el-button>
+            </p>
+            <p>
+                <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp2">
+                </el-input>
+            </p>
+
+            <el-dialog title="提示" :visible.sync="dialogVisible" width="80%" :before-close="handleClose">
+                <p>
+                    <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp3">
+                    </el-input>
+                </p>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialogVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="updateExp">确 定</el-button>
+                </span>
+            </el-dialog>
         </div>
 
     </div>
@@ -40,7 +61,12 @@
         function isLogicOpt(str, str1) {
             return str === 'and' ||
                 str === 'or' ||
-                str === 'not';
+                str === 'not' ||
+                str === 'xor' ||
+                str === 'adj' ||
+                str === 'equ/10' ||
+                str === 'xor/10' ||
+                str === 'pre/10';
         }
 
         function getWords(exp) {
@@ -275,22 +301,45 @@
         // let data = tree2List(simpleTree);
         // console.log('tree 2 list --->', data);
 
+        function tree2Exp(data) {
+            let exp = '';
+            for (let i = 0; i < data.length; i++) {
+                let item = data[i];
+                if (item.children) {
+                    let temp = tree2Exp(item.children);
+                    exp += `(${temp})`;
+                } else {
+                    exp += item.label + " ";
+                }
+            }
+            return exp;
+        }
 
         var app = new Vue({
             el: '#app',
             data() {
                 return {
                     exp: exp2,
+                    exp2: '',
                     data: [],
                     defaultProps: {
                         children: 'children',
                         label: 'label'
-                    }
+                    },
+                    dialogVisible: false,
+                    exp3: '',
+                    tempNode: {},
                 }
             },
             methods: {
-                handleNodeClick() {
+                handleNodeClick(data) {
                     console.log(data);
+                    this.tempNode = data;
+                    this.exp3 = this.tempNode.label;
+                    if (this.exp3[0] === '(') {
+                        return;
+                    }
+                    this.dialogVisible = true;
                 },
                 exp2Tree() {
                     let simpleTree = analysisExp(this.exp);
@@ -307,7 +356,47 @@
                         children.push(x.label);
                     });
                     node.label = `(${children.join(" ")})`;
+                },
+                tree2Exp() {
+                    this.exp2 = tree2Exp(this.data);
+                },
+                handleClose() {
+                    this.dialogVisible = false;
+                },
+                updateExp() {
+                    this.tempNode.label = this.exp3;
+                    this.dialogVisible = false;
+                },
+                // region 拖拽
+                handleDragStart(node, ev) {
+                    console.log('drag start', node);
+                },
+                handleDragEnter(draggingNode, dropNode, ev) {
+                    console.log('tree drag enter: ', dropNode.label);
+                },
+                handleDragLeave(draggingNode, dropNode, ev) {
+                    console.log('tree drag leave: ', dropNode.label);
+                },
+                handleDragOver(draggingNode, dropNode, ev) {
+                    console.log('tree drag over: ', dropNode.label);
+                },
+                handleDragEnd(draggingNode, dropNode, dropType, ev) {
+                    console.log('tree drag end: ', dropNode && dropNode.label, dropType);
+                },
+                handleDrop(draggingNode, dropNode, dropType, ev) {
+                    console.log('tree drop: ', dropNode.label, dropType);
+                },
+                allowDrop(draggingNode, dropNode, type) {
+                    if (dropNode.data.label === '二级 3-1') {
+                        return type !== 'inner';
+                    } else {
+                        return true;
+                    }
+                },
+                allowDrag(draggingNode) {
+                    return draggingNode.data.label[0] !== "(";
                 }
+                // endregion
             },
         });
     </script>
