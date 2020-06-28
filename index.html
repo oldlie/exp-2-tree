@@ -5,9 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/2.6.11/vue.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/element-ui/2.13.2/theme-chalk/index.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/element-ui/2.13.2/index.js"></script>
 </head>
 
 <body>
+
+    <div id="app">
+        <div>
+            <p>
+                <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp">
+                </el-input>
+            </p>
+            <p>
+                <el-button @click="exp2Tree">exp to tree</el-button>
+            </p>
+            <el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick"></el-tree>
+        </div>
+
+    </div>
+
     <script>
         let exp = '(exp1 and 表达式2) or (exp3 and exp4)';
         let exp2 = "(分类号=('B23B%' or 'B23C%' or 'B24B%' or 'B27C3/%' or 'B23F%' or 'B23H%') or 名称=(车床 or 铣床 or 钻床 or 镗床 or 磨床 or ((车削 or 车铣 or 车磨 or 车拉 or 铣削 or 车铣 or 磨削 or 珩磨 or 滚齿 or 插齿 or 车齿 or 刨齿 or 铣齿 or 拉齿 or 珩齿 or 剃齿 or 磨齿) and (机 or 设备 or 装置 or 工装 or 生产线 or 中心 or 系统))) or (摘要,主权项+=(车床 or 铣床 or ((车削 or 车铣 or 车磨 or 车拉 or 铣削 or 车铣) and (设备 or 装置 or 工装 or 生产线 or 中心))) and 分类号=('B23%')) or ((名称=(机床 or 加工中心)) and 名称,摘要,主权项+=((车削 not 车削膜) or 铣削)) or (名称,摘要,主权项+=(钻床 or 钻镗床 or 钻头) and 分类号=('B27C%')) or (名称,摘要,主权项+=(磨 and (床 or 设备 or 装置 or 工装)) and 分类号=('B23%')) or 申请（专利权）人=(格里森 or 赫思机器及工具 or 机床) or (摘要,主权项+=((滚齿 or 插齿 or 车齿 or 刨齿 or 铣齿 or 拉齿 or 珩齿 or 剃齿 or 磨齿) and (机 or 床 or 设备 or 装置 or 工装)) and 分类号=('B23%' or 'G%')) or (名称,摘要,主权项+=(线切割 or 走丝 or 电加工 or 电火花) and 分类号=('B23H%' or 'B23Q%' or '15-09%')) or (名称,摘要,主权项+=((线切割 or 电加工 or 电火花) and (导丝 or 丝架 or 线架 or 运丝 or 丝筒 or 走丝 or 电火花 or 钼丝 or 脉冲 or 电极丝 or 断线 or 断丝 or 电源)) and 分类号=('B01D%' or 'B23%' or 'G05%' or 'G06%' or 'H%')) or (分类号=('B26D7%') or 名称=(电加工 or 电火花 or 电腐蚀 or 电蚀 or 夹具))) and (分类号=('B23Q15%' or 'G05B19/18%' or 'G05B19/19%' or 'G05B19/2%' or 'G05B19/3%' or 'G05B19/40%' or 'G05B19/41%' or 'G05B13%') or 名称,摘要,主权项+=(数控 or 闭环控制 or 数值控制 or 数字控制 or NC or CNC or 插补 or 运动控制 or 自适应))"
@@ -105,7 +123,7 @@
                 if (word[0] === '(' && word[word.length - 1] === ')') {
                     word = word.replace(/(^\(|\)$)/ig, '');
                 }
-
+                console.log(word);
                 let child = analysisExp(word);
                 if (child === null) {
                     // 说明就是一个表达式，这个表达式里面不含有表达式了
@@ -178,8 +196,8 @@
             return root;
         }
 
-        let simpleTree = analysisExp(exp);
-        console.log('st --->', simpleTree);
+        // let simpleTree = analysisExp(exp2);
+        // console.log('st --->', simpleTree);
 
         /**
          * 先序遍历
@@ -194,36 +212,42 @@
             }
         }
 
-        function dlr(tree, queue) {
-            queue.push(tree.value.text);
+        function dlr2(tree, queue) {
             if (tree.left !== null) {
                 console.log('tree.left--->', tree.left.value);
                 if (tree.left.value && tree.left.value.type === 'root') {
-                    return tree.left;
+                    let lt = tree2List(tree.left);
+                    queue.push(lt)
                 } else {
-                    return dlr(tree.left, queue);
+                    dlr2(tree.left, queue);
                 }
             }
+
+            // queue.push(tree.value.text);
+            queue.push({ label: tree.value.text });
+
             if (tree.right !== null) {
                 if (tree.right.value && tree.right.value.type === 'root') {
-                    return tree.right;
+                    let lt = tree2List(tree.right);
+                    queue.push(lt)
+                } else {
+                    dlr2(tree.right, queue)
                 }
-                return dlr(tree.right, queue)
             }
+
         }
 
-        let queue = [];
-        dlr(simpleTree, queue);
-        console.log('queue', queue);
+        // let queue = [];
+        // dlr(simpleTree, queue);
+        // console.log('queue', queue);
 
 
         function tree2List(tree) {
             if (tree === null) {
                 return null;
             }
-            let vt = {};
-            vt = {
-                id: tree.value.text,
+            let vt = {
+                label: tree.value.text,
                 children: []
             }
 
@@ -231,23 +255,49 @@
             let right = copy(tree.right);
 
             if (left === null && right === null) {
-                return vt;
+                return list;
             }
 
             let queue = [];
-            let next = dlr(tree, queue);
-            for (let i = queue.length - 1; i >= 0; i--) {
-                vt.children.push({ id: queue[i] });
+            if (left != null) {
+                dlr2(left, queue);
             }
+            if (right != null) {
+                dlr2(right, queue);
+            }
+            vt.children = queue;
 
-            if (next != null) {
-                let children = tree2List(next);
-                vt.children.push(children);
-            }
             return vt;
         }
 
-        console.log(tree2List(simpleTree));
+        // let data = tree2List(simpleTree);
+        // console.log('tree 2 list --->', data);
+
+
+        var app = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    exp: exp2,
+                    data: [],
+                    defaultProps: {
+                        children: 'children',
+                        label: 'label'
+                    }
+                }
+            },
+            methods: {
+                handleNodeClick() {
+                    console.log(data);
+                },
+                exp2Tree() {
+                    let simpleTree = analysisExp(this.exp);
+                    let data = [];
+                    data.push(tree2List(simpleTree));
+                    this.data = data;
+                }
+            },
+        });
     </script>
 </body>
 
