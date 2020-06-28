@@ -21,7 +21,9 @@
             <p>
                 <el-button @click="exp2Tree">exp to tree</el-button>
             </p>
-            <el-tree :data="data" :props="defaultProps" @node-click="handleNodeClick"></el-tree>
+            <el-tree :data="data" :props="defaultProps" @node-expand="handleNodeExpand"
+                @node-collapse="handleNodeCollapse" @node-click="handleNodeClick">
+            </el-tree>
         </div>
 
     </div>
@@ -295,6 +297,16 @@
                     let data = [];
                     data.push(tree2List(simpleTree));
                     this.data = data;
+                },
+                handleNodeExpand(node) {
+                    node.label = '(...)';
+                },
+                handleNodeCollapse(node) {
+                    let children = [];
+                    node.children.forEach(x => {
+                        children.push(x.label);
+                    });
+                    node.label = `(${children.join(" ")})`;
                 }
             },
         });
