@@ -21,12 +21,35 @@
             <p>
                 <el-button @click="exp2Tree">将表达式输出成树</el-button>
             </p>
-            <el-tree :data="data" :props="defaultProps" default-expand-all @node-drag-start="handleDragStart"
-                @node-drag-enter="handleDragEnter" @node-drag-leave="handleDragLeave" @node-drag-over="handleDragOver"
-                @node-drag-end="handleDragEnd" @node-drop="handleDrop" draggable :allow-drop="allowDrop"
-                :allow-drag="allowDrag" @node-expand="handleNodeExpand" @node-collapse="handleNodeCollapse"
-                @node-click="handleNodeClick">
-            </el-tree>
+            <el-row style="white-space:pre-wrap">
+                <el-col :span="24">
+                    <el-tree :data="data" :props="defaultProps" default-expand-all @node-drag-start="handleDragStart"
+                        :indent="32" @node-drag-enter="handleDragEnter" @node-drag-leave="handleDragLeave"
+                        @node-drag-over="handleDragOver" @node-drag-end="handleDragEnd" @node-drop="handleDrop"
+                        draggable :allow-drop="allowDrop" :allow-drag="allowDrag" @node-expand="handleNodeExpand"
+                        @node-collapse="handleNodeCollapse">
+                        <span class="custom-tree-node" slot-scope="{ node, data }">
+                            <span>
+                                <el-button-group>
+                                    <el-button v-if="node.label[0] !== '('" type="text" size="mini"
+                                        @click="handleNodeClick($event, node, data)">
+                                        <i class="el-icon-edit-outline"></i>
+                                    </el-button>
+                                    <el-button v-else type="text" size="mini"
+                                        @click="handleNodeClick($event, node, data)">
+                                        <i class="el-icon-plus"></i>
+                                    </el-button>
+                                    <el-button type="text" size="mini" @click="() => remove(node, data)">
+                                        <i class="el-icon-delete"></i>
+                                    </el-button>
+                                </el-button-group>
+                            </span>
+                            <span>{{ node.label }}</span>
+                        </span>
+                    </el-tree>
+                </el-col>
+            </el-row>
+
             <p>
                 <el-button @click="tree2Exp">将树输出成表达式</el-button>
             </p>
@@ -35,7 +58,7 @@
                 </el-input>
             </p>
 
-            <el-dialog title="提示" :visible.sync="dialogVisible" width="80%" :before-close="handleClose">
+            <el-dialog title="编辑" :visible.sync="dialogVisible" width="80%" :before-close="handleClose">
                 <p>
                     <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp3">
                     </el-input>
@@ -43,6 +66,17 @@
                 <span slot="footer" class="dialog-footer">
                     <el-button @click="dialogVisible = false">取 消</el-button>
                     <el-button type="primary" @click="updateExp">确 定</el-button>
+                </span>
+            </el-dialog>
+            <el-dialog title="追加" :visible.sync="dialog1Visible" width="80%" :before-close="handle1Close">
+                <p>
+                    <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp4">
+                    </el-input>
+                </p>
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="dialog1Visible = false">取 消</el-button>
+                    <el-button type="primary" @click="appendToChildren">追加表达式到子节点</el-button>
+                    <el-button type="primary" @click="appendToGrandson">追加表达式到孙子节点</el-button>
                 </span>
             </el-dialog>
         </div>
@@ -71,7 +105,6 @@
 
         function getWords(exp) {
             exp = exp.replace(/\s+/ig, ' ');
-            console.log('getWords --->', exp);
             let bracket = 0;
             let bracketStr = '';
             let quotation = false;
@@ -137,7 +170,6 @@
         function analysisExp(exp) {
 
             let words = getWords(exp);
-            console.log(words);
             if (!words || words.length <= 1) {
                 return null;
             }
@@ -151,7 +183,6 @@
                 if (word[0] === '(' && word[word.length - 1] === ')') {
                     word = word.replace(/(^\(|\)$)/ig, '');
                 }
-                console.log(word);
                 let child = analysisExp(word);
                 if (child === null) {
                     // 说明就是一个表达式，这个表达式里面不含有表达式了
@@ -242,7 +273,6 @@
 
         function dlr2(tree, queue) {
             if (tree.left !== null) {
-                console.log('tree.left--->', tree.left.value);
                 if (tree.left.value && tree.left.value.type === 'root') {
                     let lt = tree2List(tree.left);
                     queue.push(lt)
@@ -329,17 +359,25 @@
                     dialogVisible: false,
                     exp3: '',
                     tempNode: {},
+                    tempData: {},
+                    dialog1Visible: false,
+                    exp4: '',
+
                 }
             },
             methods: {
-                handleNodeClick(data) {
-                    console.log(data);
-                    this.tempNode = data;
+                handleNodeClick(event, node, data) {
+                    console.log('event --->', event);
+                    this.tempNode = node;
+                    this.tempData = data;
                     this.exp3 = this.tempNode.label;
                     if (this.exp3[0] === '(') {
-                        return;
+                        event.stopPropagation();
+                        this.dialog1Visible = true;
+                    } else {
+                        this.dialogVisible = true;
                     }
-                    this.dialogVisible = true;
+                    return false;
                 },
                 exp2Tree() {
                     let simpleTree = analysisExp(this.exp);
@@ -363,9 +401,39 @@
                 handleClose() {
                     this.dialogVisible = false;
                 },
+                handle1Close() {
+                    this.dialog1Visible = false;
+                },
                 updateExp() {
-                    this.tempNode.label = this.exp3;
+                    console.log('update exp');
+                    this.tempData.label = this.exp3;
+                    console.log('node--->', this.tempNode, this.tempData);
                     this.dialogVisible = false;
+                },
+                remove(node, data) {
+                    console.log('node', node.id);
+                    console.log('data', data.id);
+                    const parent = node.parent;
+                    const children = parent.data.children || parent.data;
+
+                    const index = children.findIndex(d => {
+                        let id = d.$treeNodeId;
+                        console.log('children id --->', id, node.id, id === node.id);
+                        return d.$treeNodeId === node.id
+                    });
+                    children.splice(index, 1);
+                },
+                appendToChildren() {
+                    this.tempData.children.push({ label: this.exp4 });
+                    this.exp4 = '';
+                    this.dialog1Visible = false;
+                },
+                appendToGrandson() {
+                    let node = { label: '()', children: [] };
+                    node.children.push({ label: this.exp4 });
+                    this.tempData.children.push(node);
+                    this.exp4 = '';
+                    this.dialog1Visible = false;
                 },
                 // region 拖拽
                 handleDragStart(node, ev) {
@@ -394,7 +462,8 @@
                     }
                 },
                 allowDrag(draggingNode) {
-                    return draggingNode.data.label[0] !== "(";
+                    // return draggingNode.data.label[0] !== "(";
+                    return true;
                 }
                 // endregion
             },
