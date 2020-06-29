@@ -44,7 +44,7 @@
                                     </el-button>
                                 </el-button-group>
                             </span>
-                            <span>{{ node.label }}</span>
+                            <span style="font-size:12px;">{{ node.label }}</span>
                         </span>
                     </el-tree>
                 </el-col>
@@ -58,7 +58,7 @@
                 </el-input>
             </p>
 
-            <el-dialog title="编辑" :visible.sync="dialogVisible" width="80%" :before-close="handleClose">
+            <el-dialog title="编辑" :visible.sync="dialogVisible" width="80%" :close-on-click-modal="false">
                 <p>
                     <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp3">
                     </el-input>
@@ -68,7 +68,7 @@
                     <el-button type="primary" @click="updateExp">确 定</el-button>
                 </span>
             </el-dialog>
-            <el-dialog title="追加" :visible.sync="dialog1Visible" width="80%" :before-close="handle1Close">
+            <el-dialog title="追加" :visible.sync="dialog1Visible" width="80%" :close-on-click-modal="false">
                 <p>
                     <el-input type="textarea" :rows="8" placeholder="请输入内容" v-model="exp4">
                     </el-input>
@@ -137,7 +137,7 @@
                 }
                 if (quotation) {
                     console.error('单引号不匹配--->', exp);
-                    throw "单引号不匹配";
+                    throw "单引号不匹配:" + exp;
                 }
                 if (char === '\\') {
                     word += char;
@@ -158,7 +158,7 @@
             }
             if (bracket !== 0) {
                 console.error('括号不匹配 ---->', exp, bracket, bracketStr);
-                throw "括号不匹配";
+                throw "括号不匹配:" + exp;
             }
             return words;
         }
@@ -380,7 +380,12 @@
                     return false;
                 },
                 exp2Tree() {
-                    let simpleTree = analysisExp(this.exp);
+                    let simpleTree;
+                    try {
+                    simpleTree = analysisExp(this.exp);
+                    } catch (e) {
+                        this.$message.error(e);
+                    }
                     let data = [];
                     data.push(tree2List(simpleTree));
                     this.data = data;
