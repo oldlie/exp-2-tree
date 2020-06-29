@@ -390,6 +390,10 @@
                     } catch (e) {
                         this.$message.error(e);
                     }
+                    if (!simpleTree) {
+                        this.$message.error('表达式不足以构成树结构');
+                        return;
+                    }
                     let data = [];
                     data.push(tree2List(simpleTree));
                     this.data = data;
