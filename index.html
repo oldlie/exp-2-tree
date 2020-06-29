@@ -339,7 +339,11 @@
                     let temp = tree2Exp(item.children);
                     exp += `(${temp})`;
                 } else {
-                    exp += item.label + " ";
+                    if (isLogicOpt(item.label)) {
+                        exp += ' ' + item.label + ' ';
+                    } else {
+                        exp += item.label;
+                    }
                 }
             }
             return exp;
@@ -382,7 +386,7 @@
                 exp2Tree() {
                     let simpleTree;
                     try {
-                    simpleTree = analysisExp(this.exp);
+                        simpleTree = analysisExp(this.exp);
                     } catch (e) {
                         this.$message.error(e);
                     }
@@ -401,7 +405,7 @@
                     node.label = `(${children.join(" ")})`;
                 },
                 tree2Exp() {
-                    this.exp2 = tree2Exp(this.data);
+                    this.exp2 = tree2Exp(this.data[0]['children']);
                 },
                 handleClose() {
                     this.dialogVisible = false;
