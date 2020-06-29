@@ -413,15 +413,22 @@
                 remove(node, data) {
                     console.log('node', node.id);
                     console.log('data', data.id);
-                    const parent = node.parent;
-                    const children = parent.data.children || parent.data;
+                    this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        const parent = node.parent;
+                        const children = parent.data.children || parent.data;
 
-                    const index = children.findIndex(d => {
-                        let id = d.$treeNodeId;
-                        console.log('children id --->', id, node.id, id === node.id);
-                        return d.$treeNodeId === node.id
+                        const index = children.findIndex(d => {
+                            let id = d.$treeNodeId;
+                            console.log('children id --->', id, node.id, id === node.id);
+                            return d.$treeNodeId === node.id
+                        });
+                        children.splice(index, 1);
+                    }).catch(() => {
                     });
-                    children.splice(index, 1);
                 },
                 appendToChildren() {
                     this.tempData.children.push({ label: this.exp4 });
