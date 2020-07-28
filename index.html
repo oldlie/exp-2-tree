@@ -470,6 +470,7 @@
                 },
                 handleDragEnd(draggingNode, dropNode, dropType, ev) {
                     console.log('tree drag end: ', dropNode && dropNode.label, dropType);
+                    this.data = JSON.parse(JSON.stringify(this.data));
                 },
                 handleDrop(draggingNode, dropNode, dropType, ev) {
                     console.log('tree drop: ', dropNode.label, dropType);
